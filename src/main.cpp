@@ -54,6 +54,25 @@ int main() {
 	// 1. Sets env_with_metatable as environment for the function
 	// 2. Pops env_with_metatable
 	// STACK: [function_with_env]
+	
+	{
+		lua_getglobal(L, "print");
+		// STACK: [function_with_env, print_func]
+		if (lua_isfunction(L, -1)) {
+			std::cout << "It is indeed a function\n";
+			lua_pushstring(L, "Testing... testing...");
+			// STACK: [function_with_env, print_func, string]
+
+			if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+				std::cerr << "runtime error: " << lua_tostring(L, -1) << "\n";
+				lua_pop(L, 1);
+				return 1;
+			}
+		} else {
+			std::cout << "It is not a function\n";
+			return 1;
+		}
+	}
 
 	lua_getfenv(L, -1);
 	// 1. Gets environment of the function_with_env
@@ -123,6 +142,14 @@ int main() {
 	// 1. Calls greet_function with 1 arg, 0 returns
 	// 2. greet_function is popped from stack during execution
 	// STACK: [nil]
-	std::cout << "Type of top stack is: " << lua_typename(L, lua_type(L, -1)) <<"\n";
+	
+	// so what about unref? we need to cleanup VM after all
+	
+	lua_rawgeti(L, LUA_REGISTRYINDEX, env_ref);
+	// 1. Gets env_with_metatable
+	// 2. Pushes it to stack
+	// STACK: [env_with_metatable]
+	
+	lua_unref(L, -1);
 	return 0;
 }
